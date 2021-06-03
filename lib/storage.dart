@@ -2,7 +2,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter_file_dialog/flutter_file_dialog.dart';
+// import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'message_and_cause_throwable.dart';
@@ -60,6 +60,7 @@ class Storage {
   /// Throws a [ExportRecordsFailedException] if there as a problem exporting the
   /// file (possibly a user error).
   Future<void> exportRecords() async {
+    /*
     final params = SaveFileDialogParams(
       sourceFilePath: await _recordsFilePath,
       fileName: 'weight_records.csv',
@@ -70,6 +71,7 @@ class Storage {
     } catch (e) {
       throw ExportRecordsFailedException(cause: e);
     }
+    */
   }
 
   /// Opens a dialog and imports records from a file to the storage.
@@ -80,6 +82,7 @@ class Storage {
   /// Throws a [ImportingRecordsFailedException] in case of failure (possibly a
   /// user error).
   Future<bool> importRecords() async {
+    /*
     final params = OpenFileDialogParams(
         dialogType: OpenFileDialogType.document,
         sourceType: SourceType.photoLibrary);
@@ -109,6 +112,8 @@ class Storage {
     } catch (e) {
       throw ImportingRecordsFailedException(cause: e);
     }
+    */
+    return false;
   }
 
   /// Parses records from the lines of a .csv file.

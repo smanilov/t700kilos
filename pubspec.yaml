@@ -1,5 +1,5 @@
 name: t700kilos
-description: A new Flutter project.
+description: A weight tracking app for Android and iOS
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `pub publish`. This is preferred for private packages.
@@ -26,7 +26,7 @@ dependencies:
 
   intl: ^0.17.0
   path_provider: ^2.0.1
-  flutter_file_dialog: ^2.1.0
+  # flutter_file_dialog: ^2.1.0
 
 dev_dependencies:
   flutter_test:
