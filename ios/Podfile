@@ -42,7 +42,13 @@ target 'Runner' do
   # Plugin Pods
   plugin_pods = parse_KV_file("../.flutter-plugins")
   plugin_pods.map{ |p|
-    if p[:name]!='path_provider_linux'
+    if p[:name]=='path_provider_linux'
+      puts "Ignoring path_provider_linux"
+    else if p[:name]=='path_provider_macos'
+      puts "Ignoring path_provider_macos"
+    else if p[:name]=='path_provider_windows'
+      puts "Ignoring path_provider_windows"
+    else
       pod p[:name], :path => File.expand_path("ios",p[:path])
     end
   }
