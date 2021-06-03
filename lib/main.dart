@@ -264,16 +264,6 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Weight Progression'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.upload_sharp),
-            onPressed: _pushImport,
-          ),
-          IconButton(
-            icon: Icon(Icons.download_sharp),
-            onPressed: _pushExport,
-          ),
-        ],
       ),
       body: ListView(children: divided),
       floatingActionButton: FloatingActionButton(
@@ -290,43 +280,6 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
       return NewEntryWidget(
           storage: widget.storage, clock: widget.clock, isFirst: false);
     })); //_createConfirmationRoute());
-  }
-
-  Future<void> _pushImport() async {
-    try {
-      if (await widget.storage.importRecords()) {
-        // Reload records in case of success.
-        final records = await widget.storage.loadRecords();
-        setState(() {
-          widget.records
-            ..clear()
-            ..addAll(records);
-        });
-      }
-    } on ImportingRecordsFailedException catch (e) {
-      final message = 'Importing records failed';
-      final hint = 'is the file correct?';
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('$message; $hint')));
-      print('$message: $e');
-    } on LoadingRecordsFailedError catch (e) {
-      final message =
-          'Internal error: loading records failed after successfully importing file';
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('$message.')));
-      print('$message: $e');
-    }
-  }
-
-  Future<void> _pushExport() async {
-    try {
-      await widget.storage.exportRecords();
-    } on ExportRecordsFailedException catch (e) {
-      final message = 'Exporting records failed';
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('$message.')));
-      print('$message: $e');
-    }
   }
 }
 

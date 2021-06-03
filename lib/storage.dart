@@ -2,7 +2,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter_file_dialog/flutter_file_dialog.dart';
+// import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'message_and_cause_throwable.dart';
@@ -53,62 +53,6 @@ class Storage {
       '\n${_serializeSingleRecord(record)}',
       mode: FileMode.append,
     );
-  }
-
-  /// Opens a dialog and exports the stored records to a file.
-  ///
-  /// Throws a [ExportRecordsFailedException] if there as a problem exporting the
-  /// file (possibly a user error).
-  Future<void> exportRecords() async {
-    final params = SaveFileDialogParams(
-      sourceFilePath: await _recordsFilePath,
-      fileName: 'weight_records.csv',
-    );
-    try {
-      // If the result is null the operation was canceled, but do we care?
-      await FlutterFileDialog.saveFile(params: params);
-    } catch (e) {
-      throw ExportRecordsFailedException(cause: e);
-    }
-  }
-
-  /// Opens a dialog and imports records from a file to the storage.
-  ///
-  /// Returns whether the records have been imported or the operation was aborted
-  /// by the user (when the result is false).
-  ///
-  /// Throws a [ImportingRecordsFailedException] in case of failure (possibly a
-  /// user error).
-  Future<bool> importRecords() async {
-    final params = OpenFileDialogParams(
-        dialogType: OpenFileDialogType.document,
-        sourceType: SourceType.photoLibrary);
-    try {
-      // Can throw for undocumented reasons.
-      final filePath = await FlutterFileDialog.pickFile(params: params);
-      if (filePath == null) {
-        // The user didn't pick a file: abort, don't throw.
-        return false;
-      }
-      final file = File(filePath);
-      if (!await file.exists())
-        throw ImportingRecordsFailedException(
-            message: 'File "$filePath" does not exist.');
-
-      // Can throw for undocumented reasons, but possibly same as
-      // [File.readAsLinesSync].
-      final lines = await file.readAsLines();
-
-      // Try to parse records; will throw on error.
-      _parseRecords(lines).toList();
-
-      // Can throw if [_recordsFilePath] is a directory.
-      await File(filePath).copy(await _recordsFilePath);
-
-      return true;
-    } catch (e) {
-      throw ImportingRecordsFailedException(cause: e);
-    }
   }
 
   /// Parses records from the lines of a .csv file.
@@ -188,14 +132,4 @@ class Storage {
 class LoadingRecordsFailedError extends MessageAndCauseThrowable {
   LoadingRecordsFailedError({String? message, dynamic cause})
       : super(message: message, cause: cause) {}
-}
-
-class ExportRecordsFailedException extends MessageAndCauseThrowable {
-  ExportRecordsFailedException({String? message, dynamic cause})
-      : super(message: message, cause: cause);
-}
-
-class ImportingRecordsFailedException extends MessageAndCauseThrowable {
-  ImportingRecordsFailedException({String? message, dynamic cause})
-      : super(message: message, cause: cause);
 }
