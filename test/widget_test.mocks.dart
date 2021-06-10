@@ -55,6 +55,11 @@ class MockStorage extends _i1.Mock implements _i3.Storage {
           returnValue: Future<void>.value(),
           returnValueForMissingStub: Future.value()) as _i4.Future<void>);
   @override
+  _i4.Future<void> deleteSingleRecord(_i5.Record? record) =>
+      (super.noSuchMethod(Invocation.method(#deleteSingleRecord, [record]),
+          returnValue: Future<void>.value(),
+          returnValueForMissingStub: Future.value()) as _i4.Future<void>);
+  @override
   _i4.Future<void> exportRecords() =>
       (super.noSuchMethod(Invocation.method(#exportRecords, []),
           returnValue: Future<void>.value(),

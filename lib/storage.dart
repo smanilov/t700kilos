@@ -2,7 +2,7 @@
 import 'dart:async';
 import 'dart:io';
 
-// import 'package:flutter_file_dialog/flutter_file_dialog.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'message_and_cause_throwable.dart';
@@ -53,6 +53,12 @@ class Storage {
       '\n${_serializeSingleRecord(record)}',
       mode: FileMode.append,
     );
+  }
+
+  /// Deletes all records from the internal file that match [record].
+  Future<void> deleteSingleRecord(Record record) async {
+    final records = await loadRecords();
+    await storeRecords(records.where((r) => r != record).toList());
   }
 
   /// Parses records from the lines of a .csv file.
@@ -131,5 +137,5 @@ class Storage {
 
 class LoadingRecordsFailedError extends MessageAndCauseThrowable {
   LoadingRecordsFailedError({String? message, dynamic cause})
-      : super(message: message, cause: cause) {}
+      : super(message: message, cause: cause) ;
 }
