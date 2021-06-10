@@ -72,14 +72,17 @@ abstract class TimeRange implements Built<TimeRange, TimeRangeBuilder> {
   /// part of the comparison, so it does not need to be normalized in advance.
   bool containsTime(DateTime time) {
     final timeOfDay = TimeOfDay.fromDateTime(time);
+    final normalizedStart =
+        start >= TimeOfDay(24, 0) ? start.addHours(-24) : start;
+    final normalizedEnd = end >= TimeOfDay(24, 0) ? end.addHours(-24) : end;
 
-    return (start <= end)
+    return (normalizedStart <= normalizedEnd)
         ?
         // Simple case.
-        start <= timeOfDay && timeOfDay <= end
+        normalizedStart <= timeOfDay && timeOfDay <= normalizedEnd
         :
         // Range spans midnight.
-        timeOfDay <= end || start <= timeOfDay;
+        timeOfDay <= normalizedEnd || normalizedStart <= timeOfDay;
   }
 }
 
@@ -159,22 +162,34 @@ abstract class MorningEveningRecords
 /// 23:00 - evening range
 /// 03:00 - other range
 class MorningEveningAnalyser {
+  /// Returns two empty lists if there aren't enough records.
   MorningEveningRecords computeMorningEveningRecords(List<Record> records) {
-    final morningEveningRanges = _computeMorningEveningRanges(records);
-    final sortedRecords = records.toList()
-      ..sort((a, b) => a.time.compareTo(b.time));
+    if (records.isEmpty) {
+      return MorningEveningRecords([], []);
+    }
 
-    bool isMorningRecord(Record r) =>
-        morningEveningRanges.morningRange.containsTime(r.time);
-    bool isEveningRecord(Record r) =>
-        morningEveningRanges.eveningRange.containsTime(r.time);
+    try {
+      final morningEveningRanges = _computeMorningEveningRanges(records);
+      final sortedRecords = records.toList()
+        ..sort((a, b) => a.time.compareTo(b.time));
 
-    final morningRecords = _onlyOnePerDay(sortedRecords.where(isMorningRecord),
-        earlierIsBetter: true);
-    final eveningRecords = _onlyOnePerDay(sortedRecords.where(isEveningRecord),
-        earlierIsBetter: false);
+      bool isMorningRecord(Record r) =>
+          morningEveningRanges.morningRange.containsTime(r.time);
+      bool isEveningRecord(Record r) =>
+          morningEveningRanges.eveningRange.containsTime(r.time);
 
-    return MorningEveningRecords(morningRecords, eveningRecords);
+      final morningRecords = _onlyOnePerDay(
+          sortedRecords.where(isMorningRecord),
+          earlierIsBetter: true);
+      final eveningRecords = _onlyOnePerDay(
+          sortedRecords.where(isEveningRecord),
+          earlierIsBetter: false);
+
+      return MorningEveningRecords(morningRecords, eveningRecords);
+    } on NotEnoughDataException catch (e) {
+      // Expected exception when there are not enough records yet.
+      return MorningEveningRecords([], []);
+    }
   }
 
   MorningEveningRanges _computeMorningEveningRanges(List<Record> records) {
@@ -189,6 +204,14 @@ class MorningEveningAnalyser {
         .where((tod) => tod >= t4pm || tod < t4am)
         .map(
             (tod) => tod < t4am ? TimeOfDay(tod.hours + 24, tod.minutes) : tod);
+
+    if (morningTimes.isEmpty || eveningTimes.isEmpty) {
+      throw NotEnoughDataException(
+          "_computeMorningEveningRanges called with a list that doesn't "
+          'contain at least one possible morning and one possible evening '
+          'record.');
+    }
+
     return MorningEveningRanges(
         _mostPopularFiveHourWindow(morningTimes, earlierIsBetter: true),
         _mostPopularFiveHourWindow(eveningTimes, earlierIsBetter: false));
@@ -230,15 +253,20 @@ class MorningEveningAnalyser {
 }
 
 /// Returns the five hour window that contains the most items from [timesOfDay].
-/// If [earlierIsBtter] is true, then ties are broken in favour of the earlier
+/// If [earlierIsBetter] is true, then ties are broken in favour of the earlier
 /// period; otherwise -- in favour of the later period.
 ///
 /// Assumes times are normalized to the same day, i.e. 4am tomorrow is actually
 /// "28 o'clock" today.
 ///
 /// Returns ranges normalized the same way.
+///
+/// Throws an [ArgumentError] if [timesOfDay] is empty.
 TimeRange _mostPopularFiveHourWindow(Iterable<TimeOfDay> timesOfDay,
     {required bool earlierIsBetter}) {
+  if (timesOfDay.isEmpty)
+    throw ArgumentError('_mostPopularFiveHourWindow called with an empty list');
+
   final list = timesOfDay.toList();
   list.sort((a, b) => (a.hours - b.hours) * 60 + a.minutes - b.minutes);
   var bestI = 0, bestJ = 0, bestCount = 0;
@@ -266,4 +294,15 @@ bool _inTheSameDay(Record a, Record b) {
   return offsetA.year == offsetB.year &&
       offsetA.month == offsetB.month &&
       offsetA.day == offsetB.day;
+}
+
+class NotEnoughDataException implements Exception {
+  final String message;
+
+  NotEnoughDataException(this.message);
+
+  @override
+  String toString() {
+    return 'NotEnoughDataException: $message';
+  }
 }
