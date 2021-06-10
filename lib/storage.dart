@@ -55,6 +55,12 @@ class Storage {
     );
   }
 
+  /// Deletes all records from the internal file that match [record].
+  Future<void> deleteSingleRecord(Record record) async {
+    final records = await loadRecords();
+    await storeRecords(records.where((r) => r != record).toList());
+  }
+
   /// Opens a dialog and exports the stored records to a file.
   ///
   /// Throws a [ExportRecordsFailedException] if there as a problem exporting the
@@ -187,7 +193,7 @@ class Storage {
 
 class LoadingRecordsFailedError extends MessageAndCauseThrowable {
   LoadingRecordsFailedError({String? message, dynamic cause})
-      : super(message: message, cause: cause) {}
+      : super(message: message, cause: cause) ;
 }
 
 class ExportRecordsFailedException extends MessageAndCauseThrowable {

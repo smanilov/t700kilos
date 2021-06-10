@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:t700kilos/morning_evening_analysis.dart';
 
 import 'clock.dart';
 import 'decimal_number_formatter.dart';
@@ -11,7 +12,8 @@ import 'storage.dart';
 Future<void> main() async {
   await forcePortraitOnlyForAndroid();
 
-  runApp(T700KilosApp(new Storage(), new Clock()));
+  runApp(
+      T700KilosApp(new Storage(), new Clock(), new MorningEveningAnalyser()));
 }
 
 Future<void> forcePortraitOnlyForAndroid() async {
@@ -25,8 +27,9 @@ Future<void> forcePortraitOnlyForAndroid() async {
 class T700KilosApp extends StatelessWidget {
   final Storage storage;
   final Clock clock;
+  final MorningEveningAnalyser morningEveningAnalyser;
 
-  T700KilosApp(this.storage, this.clock);
+  T700KilosApp(this.storage, this.clock, this.morningEveningAnalyser);
 
   @override
   Widget build(BuildContext context) {
@@ -36,22 +39,69 @@ class T700KilosApp extends StatelessWidget {
         primaryColor: Colors.yellow,
         accentColor: Colors.yellow,
       ),
-      home: NewEntryWidget(storage: storage, clock: clock, isFirst: true),
+      home: createWelcomeWidget(),
     );
+  }
+
+  NewEntryWidget createWelcomeWidget() =>
+      NewEntryWidget(app: this, storage: storage, clock: clock, isFirst: true);
+
+  /// Navigates to the "Show Saved" widget, after poping all the widgets off the
+  /// navigation stack.
+  Future<void> navigateToShowSaved(BuildContext context) async {
+    try {
+      final records = await storage.loadRecords();
+      // Remove all items on the [Navigator]'s stack and push "Show Saved".
+      await Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute<void>(builder: (BuildContext context) {
+        return ShowSavedWidget(
+            this, storage, clock, morningEveningAnalyser, records);
+      }), (_) => false);
+    } on LoadingRecordsFailedError catch (e) {
+      final message = 'Internal error: loading records failed';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$message.')));
+      print('$message: $e');
+    }
+  }
+
+  /// Navigates to the "Confirmation" widget. Replaces the current widget in the
+  /// navigator, as this is assumed to be invoked only by the "New Entry"
+  /// widget.
+  Future<void> navigateToConfirmationWidget(BuildContext context,
+      {required num enteredWeight, required DateTime enteredTime}) async {
+    // Replace new entry widget with confirmation widget.
+    await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (BuildContext context) {
+      return ConfirmationWidget(this, enteredWeight, enteredTime);
+    }));
+  }
+
+  /// Navigates to the "New Entry" widget by simply pushing it onto the
+  /// [Navigator]'s stack.
+  Future<void> navigateToNewEntry(BuildContext context) async {
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (BuildContext context) {
+      return NewEntryWidget(
+          app: this, storage: storage, clock: clock, isFirst: false);
+    }));
   }
 }
 
 /// Full-screen widget that allows the entry of new weight measurement.
 class NewEntryWidget extends StatefulWidget {
+  final T700KilosApp app;
   final Storage storage;
-
   final Clock clock;
 
   /// Whether this widget is the one at startup, or one created later.
   final bool isFirst;
 
   NewEntryWidget(
-      {required this.storage, required this.clock, required this.isFirst});
+      {required this.app,
+      required this.storage,
+      required this.clock,
+      required this.isFirst});
 
   @override
   _NewEntryWidgetState createState() => _NewEntryWidgetState();
@@ -76,9 +126,10 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
         actions: widget.isFirst
             ? [
                 IconButton(
-                    icon: Icon(Icons.list),
-                    onPressed: () =>
-                        _pushShowSaved(widget.storage, widget.clock, context))
+                  icon: Icon(Icons.list),
+                  onPressed: () async =>
+                      await widget.app.navigateToShowSaved(context),
+                ),
               ]
             : [],
       ),
@@ -125,7 +176,7 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
       floatingActionButton: FloatingActionButton(
           child: Icon(Icons.check),
           tooltip: 'Submit',
-          onPressed: () => _pushSubmit(timeController.text)),
+          onPressed: () async => await _pushSubmit(timeController.text)),
     );
   }
 
@@ -139,12 +190,8 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
             _enteredTime;
     await _storeWeightAndTime();
 
-    // Replace new entry widget with confirmation widget.
-    Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (BuildContext context) {
-      return ConfirmationWidget(
-          widget.storage, widget.clock, _enteredWeight, _enteredTime);
-    }));
+    await widget.app.navigateToConfirmationWidget(context,
+        enteredWeight: _enteredWeight, enteredTime: _enteredTime);
   }
 
   Future<void> _storeWeightAndTime() async {
@@ -155,15 +202,12 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
 }
 
 class ConfirmationWidget extends StatelessWidget {
-  // TODO: don't depend on storage or clock, but some sort of a 'navigator'.
-  final Storage storage;
-  final Clock clock;
+  final T700KilosApp app;
 
-  final num _enteredWeight;
-  final DateTime _enteredDate;
+  final num enteredWeight;
+  final DateTime enteredDate;
 
-  const ConfirmationWidget(
-      this.storage, this.clock, this._enteredWeight, this._enteredDate);
+  const ConfirmationWidget(this.app, this.enteredWeight, this.enteredDate);
 
   @override
   Widget build(BuildContext context) {
@@ -176,42 +220,29 @@ class ConfirmationWidget extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text('got it', style: bigText),
-          Text('${_enteredWeight}kg at ${formatEnteredTime(_enteredDate)}',
+          Text('${enteredWeight}kg at ${formatEnteredTime(enteredDate)}',
               style: smallText),
         ],
       )),
       floatingActionButton: FloatingActionButton(
         child: Text('OK'),
         tooltip: 'OK',
-        onPressed: () => _pushShowSaved(storage, clock, context),
+        onPressed: () async => await app.navigateToShowSaved(context),
       ),
     );
   }
 }
 
-/// Pushes ShowSavedWidget and removes all previous routes.
-Future<void> _pushShowSaved(
-    Storage storage, Clock clock, BuildContext context) async {
-  try {
-    final records = await storage.loadRecords();
-    Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (BuildContext context) {
-      return ShowSavedWidget(storage, clock, records);
-    }), (_) => false);
-  } on LoadingRecordsFailedError catch (e) {
-    final message = 'Internal error: loading records failed';
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('$message.')));
-    print('$message: $e');
-  }
-}
-
 class ShowSavedWidget extends StatefulWidget {
+  final T700KilosApp app;
   final Storage storage;
   final Clock clock;
+  final MorningEveningAnalyser morningEveningAnalyser;
+
   final List<Record> records;
 
-  ShowSavedWidget(this.storage, this.clock, this.records);
+  ShowSavedWidget(this.app, this.storage, this.clock,
+      this.morningEveningAnalyser, this.records);
 
   @override
   _ShowSavedWidgetState createState() => _ShowSavedWidgetState();
@@ -223,7 +254,15 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
     // Make sure records are always sorted before displaying them.
     widget.records.sort((a, b) => b.time.difference(a.time).inMinutes);
 
-    final smallerText = Theme.of(context).textTheme.headline5;
+    final smallerText =
+        Theme.of(context).textTheme.headline5 ?? TextStyle(fontSize: 24);
+
+    final morningTextStyle = smallerText.copyWith();
+    final eveningTextStyle = smallerText.copyWith();
+    final otherTextStyle = smallerText.copyWith(color: Colors.grey);
+
+    final morningEveningRecords = widget.morningEveningAnalyser
+        .computeMorningEveningRecords(widget.records);
 
     final tiles = widget.records.map((Record record) {
       final weight = '${record.weight}';
@@ -239,6 +278,12 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
 
       final year = record.time.year;
 
+      final shouldDecorateMorningAndEvening = widget.records.length >= 10;
+      final isMorningTime =
+          morningEveningRecords.morningRecords.contains(record);
+      final isEveningTime =
+          morningEveningRecords.eveningRecords.contains(record);
+
       return Center(
         child: ListTile(
           title: Text(
@@ -251,8 +296,18 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
                         : monthDiff < 12
                             ? '${weight}kg at $time on $month $day'
                             : '${weight}kg at $time on $month $day, $year',
-            style: smallerText,
+            style: !shouldDecorateMorningAndEvening
+                ? smallerText
+                : (isMorningTime
+                    ? morningTextStyle
+                    : isEveningTime
+                        ? eveningTextStyle
+                        : otherTextStyle),
           ),
+          tileColor: shouldDecorateMorningAndEvening && isEveningTime
+              ? Colors.black12
+              : null,
+          onLongPress: () => _confirmRecordDeletion(context, record),
         ),
       );
     });
@@ -266,12 +321,8 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
         title: Text('Weight Progression'),
         actions: [
           IconButton(
-            icon: Icon(Icons.upload_sharp),
-            onPressed: _pushImport,
-          ),
-          IconButton(
-            icon: Icon(Icons.download_sharp),
-            onPressed: _pushExport,
+            icon: Icon(Icons.import_export),
+            onPressed: _pushImportExport,
           ),
         ],
       ),
@@ -279,17 +330,45 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         tooltip: 'New entry',
-        onPressed: _pushNewEntry,
+        onPressed: () async => await widget.app.navigateToNewEntry(context),
       ),
     );
   }
 
-  void _pushNewEntry() {
-    Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (BuildContext context) {
-      return NewEntryWidget(
-          storage: widget.storage, clock: widget.clock, isFirst: false);
-    })); //_createConfirmationRoute());
+  Future<void> _pushImportExport() async {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return SimpleDialog(
+              title: Center(child: Text("Manage records")),
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      child: Column(children: [
+                        Icon(Icons.upload_sharp, color: Colors.black),
+                        Text("Export", style: TextStyle(color: Colors.black))
+                      ]),
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        _pushExport();
+                      },
+                    ),
+                    TextButton(
+                      child: Column(children: [
+                        Icon(Icons.download_sharp, color: Colors.black),
+                        Text("Import", style: TextStyle(color: Colors.black))
+                      ]),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _pushImport();
+                      },
+                    ),
+                  ],
+                )
+              ]);
+        });
   }
 
   Future<void> _pushImport() async {
@@ -327,6 +406,35 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
           .showSnackBar(SnackBar(content: Text('$message.')));
       print('$message: $e');
     }
+  }
+
+  void _confirmRecordDeletion(BuildContext context, Record record) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+              title: Text("Confirm deletion?"),
+              content: Text("Deleting a record cannot be undone"),
+              actions: [
+                TextButton(
+                  child: Text("Cancel", style: TextStyle(color: Colors.black)),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                TextButton(
+                  child: Text("Delete", style: TextStyle(color: Colors.red)),
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await widget.storage.deleteSingleRecord(record);
+                    final records = await widget.storage.loadRecords();
+                    setState(() {
+                      widget.records
+                        ..clear()
+                        ..addAll(records);
+                    });
+                  },
+                )
+              ]);
+        });
   }
 }
 
