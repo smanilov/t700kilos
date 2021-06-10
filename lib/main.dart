@@ -263,6 +263,9 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
 
     final morningEveningRecords = widget.morningEveningAnalyser
         .computeMorningEveningRecords(widget.records);
+    final shouldDecorateMorningAndEvening = widget.records.length >= 10 &&
+        morningEveningRecords.morningRecords.isNotEmpty &&
+        morningEveningRecords.eveningRecords.isNotEmpty;
 
     final tiles = widget.records.map((Record record) {
       final weight = '${record.weight}';
@@ -278,7 +281,6 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
 
       final year = record.time.year;
 
-      final shouldDecorateMorningAndEvening = widget.records.length >= 10;
       final isMorningTime =
           morningEveningRecords.morningRecords.contains(record);
       final isEveningTime =
