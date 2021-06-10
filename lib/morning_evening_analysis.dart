@@ -72,9 +72,6 @@ abstract class TimeRange implements Built<TimeRange, TimeRangeBuilder> {
   /// part of the comparison, so it does not need to be normalized in advance.
   bool containsTime(DateTime time) {
     final timeOfDay = TimeOfDay.fromDateTime(time);
-    final normalizedStart =
-        start >= TimeOfDay(24, 0) ? start.addHours(-24) : start;
-    final normalizedEnd = end >= TimeOfDay(24, 0) ? end.addHours(-24) : end;
 
     return (start <= end)
         ?
@@ -181,17 +178,17 @@ class MorningEveningAnalyser {
   }
 
   MorningEveningRanges _computeMorningEveningRanges(List<Record> records) {
-    final _4am = TimeOfDay(4, 0);
-    final _4pm = TimeOfDay(16, 0);
+    final t4am = TimeOfDay(4, 0);
+    final t4pm = TimeOfDay(16, 0);
     final timesOfDay = records.map((r) => TimeOfDay.fromDateTime(r.time));
     // Possible morning times: limited to (4am, 4pm).
-    final morningTimes = timesOfDay.where((tod) => tod >= _4am && tod < _4pm);
+    final morningTimes = timesOfDay.where((tod) => tod >= t4am && tod < t4pm);
     // Possible evening times: limited to (4pm, 4am). Times after midnight are
     // represented by an offset of 24:00, e.g. 3am is 27:00.
     final eveningTimes = timesOfDay
-        .where((tod) => tod >= _4pm || tod < _4am)
+        .where((tod) => tod >= t4pm || tod < t4am)
         .map(
-            (tod) => tod < _4am ? TimeOfDay(tod.hours + 24, tod.minutes) : tod);
+            (tod) => tod < t4am ? TimeOfDay(tod.hours + 24, tod.minutes) : tod);
     return MorningEveningRanges(
         _mostPopularFiveHourWindow(morningTimes, earlierIsBetter: true),
         _mostPopularFiveHourWindow(eveningTimes, earlierIsBetter: false));

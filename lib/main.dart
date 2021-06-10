@@ -233,23 +233,6 @@ class ConfirmationWidget extends StatelessWidget {
   }
 }
 
-/// Pushes ShowSavedWidget and removes all previous routes.
-Future<void> _pushShowSaved(
-    Storage storage, Clock clock, BuildContext context) async {
-  try {
-    final records = await storage.loadRecords();
-    Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (BuildContext context) {
-      return ShowSavedWidget(storage, clock, records);
-    }), (_) => false);
-  } on LoadingRecordsFailedError catch (e) {
-    final message = 'Internal error: loading records failed';
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('$message.')));
-    print('$message: $e');
-  }
-}
-
 class ShowSavedWidget extends StatefulWidget {
   final T700KilosApp app;
   final Storage storage;
@@ -346,6 +329,34 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
     );
   }
 
+  void _confirmRecordDeletion(BuildContext context, Record record) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+              title: Text("Confirm deletion?"),
+              content: Text("Deleting a record cannot be undone"),
+              actions: [
+                TextButton(
+                  child: Text("Cancel", style: TextStyle(color: Colors.black)),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                TextButton(
+                  child: Text("Delete", style: TextStyle(color: Colors.red)),
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await widget.storage.deleteSingleRecord(record);
+                    final records = await widget.storage.loadRecords();
+                    setState(() {
+                      widget.records
+                        ..clear()
+                        ..addAll(records);
+                    });
+                  },
+                )
+              ]);
+        });
+  }
 }
 
 /// Returns 0 if [time] is today, 1 if yesterday, and so on.

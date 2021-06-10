@@ -2,12 +2,13 @@
 // in t700kilos/test/widget_test.dart.
 // Do not manually edit this file.
 
-import 'dart:async' as _i4;
+import 'dart:async' as _i5;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:t700kilos/clock.dart' as _i2;
-import 'package:t700kilos/record.dart' as _i5;
-import 'package:t700kilos/storage.dart' as _i3;
+import 'package:t700kilos/clock.dart' as _i3;
+import 'package:t700kilos/morning_evening_analysis.dart' as _i2;
+import 'package:t700kilos/record.dart' as _i6;
+import 'package:t700kilos/storage.dart' as _i4;
 
 // ignore_for_file: avoid_redundant_argument_values
 // ignore_for_file: comment_references
@@ -17,10 +18,13 @@ import 'package:t700kilos/storage.dart' as _i3;
 
 class _FakeDateTime extends _i1.Fake implements DateTime {}
 
+class _FakeMorningEveningRecords extends _i1.Fake
+    implements _i2.MorningEveningRecords {}
+
 /// A class which mocks [Clock].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockClock extends _i1.Mock implements _i2.Clock {
+class MockClock extends _i1.Mock implements _i3.Clock {
   MockClock() {
     _i1.throwOnMissingStub(this);
   }
@@ -34,38 +38,47 @@ class MockClock extends _i1.Mock implements _i2.Clock {
 /// A class which mocks [Storage].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockStorage extends _i1.Mock implements _i3.Storage {
+class MockStorage extends _i1.Mock implements _i4.Storage {
   MockStorage() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i4.Future<List<_i5.Record>> loadRecords() =>
+  _i5.Future<List<_i6.Record>> loadRecords() =>
       (super.noSuchMethod(Invocation.method(#loadRecords, []),
-              returnValue: Future<List<_i5.Record>>.value(<_i5.Record>[]))
-          as _i4.Future<List<_i5.Record>>);
+              returnValue: Future<List<_i6.Record>>.value(<_i6.Record>[]))
+          as _i5.Future<List<_i6.Record>>);
   @override
-  _i4.Future<void> storeRecords(List<_i5.Record>? records) =>
+  _i5.Future<void> storeRecords(List<_i6.Record>? records) =>
       (super.noSuchMethod(Invocation.method(#storeRecords, [records]),
           returnValue: Future<void>.value(),
-          returnValueForMissingStub: Future.value()) as _i4.Future<void>);
+          returnValueForMissingStub: Future.value()) as _i5.Future<void>);
   @override
-  _i4.Future<void> storeSingleRecord(_i5.Record? record) =>
+  _i5.Future<void> storeSingleRecord(_i6.Record? record) =>
       (super.noSuchMethod(Invocation.method(#storeSingleRecord, [record]),
           returnValue: Future<void>.value(),
-          returnValueForMissingStub: Future.value()) as _i4.Future<void>);
+          returnValueForMissingStub: Future.value()) as _i5.Future<void>);
   @override
-  _i4.Future<void> deleteSingleRecord(_i5.Record? record) =>
+  _i5.Future<void> deleteSingleRecord(_i6.Record? record) =>
       (super.noSuchMethod(Invocation.method(#deleteSingleRecord, [record]),
           returnValue: Future<void>.value(),
-          returnValueForMissingStub: Future.value()) as _i4.Future<void>);
+          returnValueForMissingStub: Future.value()) as _i5.Future<void>);
+}
+
+/// A class which mocks [MorningEveningAnalyser].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockMorningEveningAnalyser extends _i1.Mock
+    implements _i2.MorningEveningAnalyser {
+  MockMorningEveningAnalyser() {
+    _i1.throwOnMissingStub(this);
+  }
+
   @override
-  _i4.Future<void> exportRecords() =>
-      (super.noSuchMethod(Invocation.method(#exportRecords, []),
-          returnValue: Future<void>.value(),
-          returnValueForMissingStub: Future.value()) as _i4.Future<void>);
-  @override
-  _i4.Future<bool> importRecords() =>
-      (super.noSuchMethod(Invocation.method(#importRecords, []),
-          returnValue: Future<bool>.value(false)) as _i4.Future<bool>);
+  _i2.MorningEveningRecords computeMorningEveningRecords(
+          List<_i6.Record>? records) =>
+      (super.noSuchMethod(
+              Invocation.method(#computeMorningEveningRecords, [records]),
+              returnValue: _FakeMorningEveningRecords())
+          as _i2.MorningEveningRecords);
 }
