@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:t700kilos/morning_evening_analysis.dart';
 
 import 'clock.dart';
 import 'decimal_number_formatter.dart';
@@ -11,7 +12,12 @@ import 'storage.dart';
 Future<void> main() async {
   await forcePortraitOnlyForAndroid();
 
-  runApp(T700KilosApp(new Storage(), new Clock()));
+  runApp(T700KilosApp(
+    new Storage(),
+    new Clock(),
+    new MorningEveningAnalyser(),
+    new SwipeAnalyser(),
+  ));
 }
 
 Future<void> forcePortraitOnlyForAndroid() async {
@@ -22,12 +28,41 @@ Future<void> forcePortraitOnlyForAndroid() async {
   ]);
 }
 
+class SwipeAnalyser {
+  final panHistory = <DragUpdateDetails>[];
+
+  void recordPan(DragUpdateDetails details) {
+    panHistory.add(details);
+  }
+
+  bool hasSwipedLeft() {
+    // TODO: be smarter
+    return panHistory.isNotEmpty && panHistory.last.delta.dx < 0;
+  }
+
+  bool hasSwipedRight() {
+    // TODO: be smarter
+    return panHistory.isNotEmpty && panHistory.last.delta.dx > 0;
+  }
+}
+
+enum SlideDirection {
+  left,
+  right,
+}
+
 class T700KilosApp extends StatelessWidget {
   final Storage storage;
   final Clock clock;
   final MorningEveningAnalyser morningEveningAnalyser;
+  final SwipeAnalyser swipeAnalyser;
 
-  T700KilosApp(this.storage, this.clock, this.morningEveningAnalyser);
+  T700KilosApp(
+    this.storage,
+    this.clock,
+    this.morningEveningAnalyser,
+    this.swipeAnalyser,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -41,20 +76,46 @@ class T700KilosApp extends StatelessWidget {
     );
   }
 
-  NewEntryWidget createWelcomeWidget() =>
-      NewEntryWidget(app: this, storage: storage, clock: clock, isFirst: true);
+  NewEntryWidget createWelcomeWidget() => NewEntryWidget(
+        app: this,
+        storage: storage,
+        clock: clock,
+        swipeAnalyser: swipeAnalyser,
+        isFirst: true,
+      );
 
   /// Navigates to the "Show Saved" widget, after poping all the widgets off the
   /// navigation stack.
-  Future<void> navigateToShowSaved(BuildContext context) async {
+  Future<void> navigateToShowSaved(BuildContext context,
+      [SlideDirection? slideDirection]) async {
     try {
       final records = await storage.loadRecords();
       // Remove all items on the [Navigator]'s stack and push "Show Saved".
       await Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute<void>(builder: (BuildContext context) {
-        return ShowSavedWidget(
-            this, storage, clock, morningEveningAnalyser, records);
-      }), (_) => false);
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) {
+            return ShowSavedWidget(
+                this, storage, clock, morningEveningAnalyser, records);
+          },
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            if (slideDirection == null) {
+              return child;
+            }
+            final slide = Tween(
+                    begin: Offset(
+                        slideDirection == SlideDirection.left ? -1.0 : 1.0,
+                        0.0),
+                    end: Offset.zero)
+                .chain(CurveTween(curve: Curves.ease));
+
+            return SlideTransition(
+              position: animation.drive(slide),
+              child: child,
+            );
+          },
+        ),
+        (_) => false, // No filter, i.e. remove all.
+      );
     } on LoadingRecordsFailedError catch (e) {
       final message = 'Internal error: loading records failed';
       ScaffoldMessenger.of(context)
@@ -81,7 +142,12 @@ class T700KilosApp extends StatelessWidget {
     await Navigator.of(context)
         .push(MaterialPageRoute<void>(builder: (BuildContext context) {
       return NewEntryWidget(
-          app: this, storage: storage, clock: clock, isFirst: false);
+        app: this,
+        storage: storage,
+        clock: clock,
+        swipeAnalyser: swipeAnalyser,
+        isFirst: false,
+      );
     }));
   }
 }
@@ -90,17 +156,19 @@ class T700KilosApp extends StatelessWidget {
 class NewEntryWidget extends StatefulWidget {
   final T700KilosApp app;
   final Storage storage;
-
   final Clock clock;
+  final SwipeAnalyser swipeAnalyser;
 
   /// Whether this widget is the one at startup, or one created later.
   final bool isFirst;
 
-  NewEntryWidget(
-      {required this.app,
-      required this.storage,
-      required this.clock,
-      required this.isFirst});
+  NewEntryWidget({
+    required this.app,
+    required this.storage,
+    required this.clock,
+    required this.swipeAnalyser,
+    required this.isFirst,
+  });
 
   @override
   _NewEntryWidgetState createState() => _NewEntryWidgetState();
@@ -119,63 +187,78 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
     final timeController =
         TextEditingController(text: formatEnteredTime(_enteredTime));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('New Entry'),
-        actions: widget.isFirst
-            ? [
-                IconButton(
-                  icon: Icon(Icons.list),
-                  onPressed: () async =>
-                      await widget.app.navigateToShowSaved(context),
-                ),
-              ]
-            : [],
-      ),
-      body: Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text('Opa!', style: bigText),
-        Text('Enter weight:', style: smallText),
-        ListTile(
-            title: TextField(
-              key: Key("weight input"),
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.right,
-              inputFormatters: [DecimalNumberFormatter()],
-              onChanged: (value) {
-                if (value != '') _enteredWeight = num.parse(value);
+    return GestureDetector(
+      onPanUpdate: (details) {
+        widget.swipeAnalyser.recordPan(details);
+        if (widget.isFirst) {
+          if (widget.swipeAnalyser.hasSwipedLeft()) {
+            widget.app.navigateToShowSaved(context, SlideDirection.right);
+          }
+        } else {
+          if (widget.swipeAnalyser.hasSwipedRight()) {
+            widget.app.navigateToShowSaved(context, SlideDirection.left);
+          }
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('New Entry'),
+          actions: widget.isFirst
+              ? [
+                  IconButton(
+                    icon: Icon(Icons.list),
+                    onPressed: () async =>
+                        await widget.app.navigateToShowSaved(context),
+                  ),
+                ]
+              : [],
+        ),
+        body: Center(
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text('Opa!', style: bigText),
+          Text('Enter weight:', style: smallText),
+          ListTile(
+              title: TextField(
+                key: Key("weight input"),
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.right,
+                inputFormatters: [DecimalNumberFormatter()],
+                onChanged: (value) {
+                  if (value != '') _enteredWeight = num.parse(value);
+                },
+                style: smallText,
+              ),
+              trailing: Text('kg', style: smallText)),
+          Text('at time:', style: smallText),
+          TextField(
+              controller: timeController,
+              keyboardType: TextInputType.datetime,
+              textAlign: TextAlign.center,
+              onTap: () {
+                if (!_hasSuccessfullyEnteredTime) {
+                  // Delete the default entry on first tap.
+                  timeController.text = '';
+                }
               },
-              style: smallText,
-            ),
-            trailing: Text('kg', style: smallText)),
-        Text('at time:', style: smallText),
-        TextField(
-            controller: timeController,
-            keyboardType: TextInputType.datetime,
-            textAlign: TextAlign.center,
-            onTap: () {
-              if (!_hasSuccessfullyEnteredTime) {
-                // Delete the default entry on first tap.
-                timeController.text = '';
-              }
-            },
-            onSubmitted: (String value) {
-              final enteredTime =
-                  tryParseEnteredTime(value, now: widget.clock.now);
-              if (enteredTime != null) {
-                _enteredTime = enteredTime;
-                _hasSuccessfullyEnteredTime = true;
-              } else {
-                // Restore last successful entered time if parsing failed.
-                timeController.text = formatEnteredTime(_enteredTime);
-              }
-            },
-            style: smallText),
-      ])),
-      floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.check),
-          tooltip: 'Submit',
-          onPressed: () async => await _pushSubmit(timeController.text)),
+              onSubmitted: (String value) {
+                final enteredTime =
+                    tryParseEnteredTime(value, now: widget.clock.now);
+                if (enteredTime != null) {
+                  _enteredTime = enteredTime;
+                  _hasSuccessfullyEnteredTime = true;
+                } else {
+                  // Restore last successful entered time if parsing failed.
+                  timeController.text = formatEnteredTime(_enteredTime);
+                }
+              },
+              style: smallText),
+        ])),
+        floatingActionButton: FloatingActionButton(
+            child: Icon(Icons.check),
+            tooltip: 'Submit',
+            onPressed: () async => await _pushSubmit(timeController.text)),
+      ),
     );
   }
 
