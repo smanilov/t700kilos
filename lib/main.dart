@@ -331,31 +331,67 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
     );
   }
 
+  /// Creates a circular button with text, inspired by the Google Drive UI.
+  Widget _createDriveButton(
+      {required IconData icon,
+      required String text,
+      required VoidCallback onPressed,
+      Color? color}) {
+    final lightGrey = Colors.black12;
+    final grey = Colors.black54;
+    return Padding(
+        padding: EdgeInsets.all(6.0),
+        child: TextButton(
+          style: TextButton.styleFrom(splashFactory: NoSplash.splashFactory),
+          child: Column(children: [
+            Ink(
+              decoration: ShapeDecoration(
+                  shape: CircleBorder(side: BorderSide(color: lightGrey))),
+              child: Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: Icon(icon, color: color ?? grey)),
+            ),
+            Padding(
+                padding: EdgeInsets.all(6.0),
+                child: Text(text, style: TextStyle(color: grey))),
+          ]),
+          onPressed: onPressed,
+        ));
+  }
+
   void _confirmRecordDeletion(BuildContext context, Record record) {
     showDialog(
         context: context,
         builder: (context) {
-          return AlertDialog(
-              title: Text("Confirm deletion?"),
-              content: Text("Deleting a record cannot be undone"),
-              actions: [
-                TextButton(
-                  child: Text("Cancel", style: TextStyle(color: Colors.black)),
-                  onPressed: () => Navigator.of(context).pop(),
+          return SimpleDialog(
+              title: Center(child: Text("Confirm deletion?")),
+              children: [
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: Text("Deleting a record cannot be undone."),
+                  ),
                 ),
-                TextButton(
-                  child: Text("Delete", style: TextStyle(color: Colors.red)),
-                  onPressed: () async {
-                    Navigator.of(context).pop();
-                    await widget.storage.deleteSingleRecord(record);
-                    final records = await widget.storage.loadRecords();
-                    setState(() {
-                      widget.records
-                        ..clear()
-                        ..addAll(records);
-                    });
-                  },
-                )
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  _createDriveButton(
+                      icon: Icons.close,
+                      text: "Cancel",
+                      onPressed: () => Navigator.of(context).pop()),
+                  _createDriveButton(
+                      icon: Icons.delete,
+                      text: "Delete",
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        await widget.storage.deleteSingleRecord(record);
+                        final records = await widget.storage.loadRecords();
+                        setState(() {
+                          widget.records
+                            ..clear()
+                            ..addAll(records);
+                        });
+                      },
+                      color: Colors.red),
+                ])
               ]);
         });
   }
