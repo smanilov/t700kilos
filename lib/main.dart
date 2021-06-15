@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:t700kilos/morning_evening_analysis.dart';
 
 import 'clock.dart';
 import 'decimal_number_formatter.dart';
@@ -12,8 +11,7 @@ import 'storage.dart';
 Future<void> main() async {
   await forcePortraitOnlyForAndroid();
 
-  runApp(
-      T700KilosApp(new Storage(), new Clock(), new MorningEveningAnalyser()));
+  runApp(T700KilosApp(new Storage(), new Clock()));
 }
 
 Future<void> forcePortraitOnlyForAndroid() async {
@@ -92,6 +90,7 @@ class T700KilosApp extends StatelessWidget {
 class NewEntryWidget extends StatefulWidget {
   final T700KilosApp app;
   final Storage storage;
+
   final Clock clock;
 
   /// Whether this widget is the one at startup, or one created later.
@@ -321,6 +320,12 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Weight Progression'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.import_export),
+            onPressed: _pushImportExport,
+          ),
+        ],
       ),
       body: ListView(children: divided),
       floatingActionButton: FloatingActionButton(
@@ -329,6 +334,36 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
         onPressed: () async => await widget.app.navigateToNewEntry(context),
       ),
     );
+  }
+
+  Future<void> _pushImportExport() async {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return SimpleDialog(
+              title: Center(child: Text("Manage records")),
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _createDriveButton(
+                        icon: Icons.upload_sharp,
+                        text: "Export",
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          _pushExport();
+                        }),
+                    _createDriveButton(
+                        icon: Icons.download_sharp,
+                        text: "Import",
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          _pushImport();
+                        }),
+                  ],
+                )
+              ]);
+        });
   }
 
   /// Creates a circular button with text, inspired by the Google Drive UI.
@@ -357,6 +392,43 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
           ]),
           onPressed: onPressed,
         ));
+  }
+
+  Future<void> _pushImport() async {
+    try {
+      if (await widget.storage.importRecords()) {
+        // Reload records in case of success.
+        final records = await widget.storage.loadRecords();
+        setState(() {
+          widget.records
+            ..clear()
+            ..addAll(records);
+        });
+      }
+    } on ImportingRecordsFailedException catch (e) {
+      final message = 'Importing records failed';
+      final hint = 'is the file correct?';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$message; $hint')));
+      print('$message: $e');
+    } on LoadingRecordsFailedError catch (e) {
+      final message =
+          'Internal error: loading records failed after successfully importing file';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$message.')));
+      print('$message: $e');
+    }
+  }
+
+  Future<void> _pushExport() async {
+    try {
+      await widget.storage.exportRecords();
+    } on ExportRecordsFailedException catch (e) {
+      final message = 'Exporting records failed';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$message.')));
+      print('$message: $e');
+    }
   }
 
   void _confirmRecordDeletion(BuildContext context, Record record) {

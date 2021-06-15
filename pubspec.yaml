@@ -26,6 +26,7 @@ dependencies:
 
   intl: ^0.17.0
   path_provider: ^2.0.1
+  flutter_file_dialog: ^2.1.0
   built_value: ^8.0.6
 
 dev_dependencies:
