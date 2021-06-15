@@ -52,5 +52,6 @@ test/*.mocks.dart
 /android/app/release
 /android/.gradle/
 
-# Don't include icon versions to reduce bloat.
+# Don't include icon versions and screenshots to reduce bloat.
 /icons/
+/screenshots/
