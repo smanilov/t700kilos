@@ -41,8 +41,10 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-# Codegen related
+# Don't include generated code (e.g. built values and mocks).
 *.g.dart
+test/*.mocks.dart
+
 
 # Android Studio will place build artifacts here.
 /android/app/debug
