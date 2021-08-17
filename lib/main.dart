@@ -55,13 +55,14 @@ class T700KilosApp extends StatelessWidget {
   final Storage storage;
   final Clock clock;
   final MorningEveningAnalyser morningEveningAnalyser;
-  final SwipeAnalyser swipeAnalyser;
+  // TODO: make non-nullable when finished and added to test
+  final SwipeAnalyser? swipeAnalyser;
 
   T700KilosApp(
     this.storage,
     this.clock,
     this.morningEveningAnalyser,
-    this.swipeAnalyser,
+    [this.swipeAnalyser]
   );
 
   @override
@@ -157,7 +158,7 @@ class NewEntryWidget extends StatefulWidget {
   final T700KilosApp app;
   final Storage storage;
   final Clock clock;
-  final SwipeAnalyser swipeAnalyser;
+  final SwipeAnalyser? swipeAnalyser;
 
   /// Whether this widget is the one at startup, or one created later.
   final bool isFirst;
@@ -189,14 +190,16 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
 
     return GestureDetector(
       onPanUpdate: (details) {
-        widget.swipeAnalyser.recordPan(details);
-        if (widget.isFirst) {
-          if (widget.swipeAnalyser.hasSwipedLeft()) {
-            widget.app.navigateToShowSaved(context, SlideDirection.right);
-          }
-        } else {
-          if (widget.swipeAnalyser.hasSwipedRight()) {
-            widget.app.navigateToShowSaved(context, SlideDirection.left);
+        if (widget.swipeAnalyser != null) {
+          widget.swipeAnalyser!.recordPan(details);
+          if (widget.isFirst) {
+            if (widget.swipeAnalyser!.hasSwipedLeft()) {
+              widget.app.navigateToShowSaved(context, SlideDirection.right);
+            }
+          } else {
+            if (widget.swipeAnalyser!.hasSwipedRight()) {
+              widget.app.navigateToShowSaved(context, SlideDirection.left);
+            }
           }
         }
       },
@@ -221,7 +224,7 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
           ListTile(
               title: TextField(
                 key: Key("weight input"),
-                keyboardType: TextInputType.number,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
                 textAlign: TextAlign.right,
                 inputFormatters: [DecimalNumberFormatter()],
                 onChanged: (value) {

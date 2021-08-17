@@ -186,7 +186,7 @@ class MorningEveningAnalyser {
           earlierIsBetter: false);
 
       return MorningEveningRecords(morningRecords, eveningRecords);
-    } on NotEnoughDataException catch (e) {
+    } on NotEnoughDataException {
       // Expected exception when there are not enough records yet.
       return MorningEveningRecords([], []);
     }
