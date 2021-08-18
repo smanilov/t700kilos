@@ -16,7 +16,7 @@ Future<void> main() async {
     new Storage(),
     new Clock(),
     new MorningEveningAnalyser(),
-    new SwipeAnalyser(),
+    null, // new SwipeAnalyser(),
   ));
 }
 
