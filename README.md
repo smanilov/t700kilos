@@ -8,7 +8,7 @@ You need to install flutter, android-studio, and the flutter plugin for it.
 
 Then run the generator for built_value like this:
 
-`flutter packages pub run build_runner build`
+`dart run build_runner build`
 
 ## Building
 
