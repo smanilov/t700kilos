@@ -67,12 +67,12 @@ class T700KilosApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = ThemeData();
     return MaterialApp(
       title: '700 kilos',
-      theme: ThemeData(
-        primaryColor: Colors.yellow,
-        accentColor: Colors.yellow,
-      ),
+      theme: theme.copyWith(
+          colorScheme: theme.colorScheme
+              .copyWith(primary: Colors.yellow, secondary: Colors.yellow)),
       home: createWelcomeWidget(),
     );
   }
