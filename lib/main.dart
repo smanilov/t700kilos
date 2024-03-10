@@ -85,8 +85,8 @@ class T700KilosApp extends StatelessWidget {
         isFirst: true,
       );
 
-  /// Navigates to the "Show Saved" widget, after poping all the widgets off the
-  /// navigation stack.
+  /// Navigates to the "Show Saved" widget, after popping all the widgets off
+  /// the navigation stack.
   Future<void> navigateToShowSaved(BuildContext context,
       [SlideDirection? slideDirection]) async {
     try {
@@ -236,7 +236,7 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
           Text('at time:', style: smallText),
           TextField(
               controller: timeController,
-              keyboardType: TextInputType.datetime,
+              keyboardType: TextInputType.text,
               textAlign: TextAlign.center,
               onTap: () {
                 if (!_hasSuccessfullyEnteredTime) {

@@ -8,6 +8,25 @@ import 'package:intl/intl.dart';
 /// Returns a date consisting of the current day and the parsed time or null
 /// if parsing failed.
 DateTime? tryParseEnteredTime(String value, {DateTime? now}) {
+  // Accept 9 or 11 as hours.
+  if (value.length > 0 && value.length < 3) {
+    final hours = int.tryParse(value);
+    if (hours == null) return null;
+    if (hours < 0 || hours > 23) return null;
+    return DateTime(
+        now?.year ?? 0, now?.month ?? 1, now?.day ?? 1, hours, 0);
+  }
+
+  // Accept 917 or 1142 as 9:17 or 11:42
+  if (value.length >= 3 && value.length < 5) {
+    final hours = int.tryParse(value.substring(0, value.length - 2));
+    final minutes = int.tryParse(value.substring(value.length - 2));
+    if (hours == null || minutes == null) return null;
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+    return DateTime(
+        now?.year ?? 0, now?.month ?? 1, now?.day ?? 1, hours, minutes);
+  }
+
   if (value.length != 5) return null;
   if (!value.contains(':')) return null;
 
