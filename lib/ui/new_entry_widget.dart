@@ -31,13 +31,15 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
   late DateTime _enteredTime = widget.clock.now;
   bool _hasSuccessfullyEnteredTime = false;
 
+  bool isEntryPositive() => _enteredWeight > 0;
+
   @override
   Widget build(BuildContext context) {
     final bigText = Theme.of(context).textTheme.displayLarge;
     final smallText = Theme.of(context).textTheme.headlineMedium;
 
     final timeController =
-    TextEditingController(text: formatEnteredTime(_enteredTime));
+        TextEditingController(text: formatEnteredTime(_enteredTime));
 
     return GestureDetector(
       child: Scaffold(
@@ -45,60 +47,66 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
           title: Text('New Entry'),
           actions: widget.isFirst
               ? [
-            IconButton(
-              icon: Icon(Icons.list),
-              onPressed: () async =>
-              await widget.app.navigateToShowSaved(context),
-            ),
-          ]
+                  IconButton(
+                    icon: Icon(Icons.list),
+                    onPressed: () async =>
+                        await widget.app.navigateToShowSaved(context),
+                  ),
+                ]
               : [],
           backgroundColor: widget.app.colorScheme.primary,
         ),
         body: Center(
             child:
-            Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text('Opa!', style: bigText),
-              Text('Enter weight:', style: smallText),
-              ListTile(
-                  title: TextField(
-                    key: Key("weight input"),
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
-                    textAlign: TextAlign.right,
-                    inputFormatters: [DecimalNumberFormatter()],
-                    onChanged: (value) {
-                      if (value != '') _enteredWeight = num.parse(value);
-                    },
-                    style: smallText,
-                  ),
-                  trailing: Text('kg', style: smallText)),
-              Text('at time:', style: smallText),
-              TextField(
-                  controller: timeController,
-                  keyboardType: TextInputType.text,
-                  textAlign: TextAlign.center,
-                  onTap: () {
-                    if (!_hasSuccessfullyEnteredTime) {
-                      // Delete the default entry on first tap.
-                      timeController.text = '';
-                    }
-                  },
-                  onSubmitted: (String value) {
-                    final enteredTime =
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text('Opa!', style: bigText),
+          Text('Enter weight:', style: smallText),
+          ListTile(
+              title: TextField(
+                key: Key("weight input"),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                textAlign: TextAlign.right,
+                inputFormatters: [DecimalNumberFormatter()],
+                onChanged: (value) {
+                  final weight = (value != '') ? num.parse(value) : 0.0;
+                  setState(() {
+                    _enteredWeight = weight;
+                  });
+                },
+                style: smallText,
+              ),
+              trailing: Text('kg', style: smallText)),
+          Text('at time:', style: smallText),
+          TextField(
+              controller: timeController,
+              keyboardType: TextInputType.text,
+              textAlign: TextAlign.center,
+              onTap: () {
+                if (!_hasSuccessfullyEnteredTime) {
+                  // Delete the default entry on first tap.
+                  timeController.text = '';
+                }
+              },
+              onSubmitted: (String value) {
+                final enteredTime =
                     tryParseEnteredTime(value, now: widget.clock.now);
-                    if (enteredTime != null) {
-                      _enteredTime = enteredTime;
-                      _hasSuccessfullyEnteredTime = true;
-                    } else {
-                      // Restore last successful entered time if parsing failed.
-                      timeController.text = formatEnteredTime(_enteredTime);
-                    }
-                  },
-                  style: smallText),
-            ])),
+                if (enteredTime != null) {
+                  _enteredTime = enteredTime;
+                  _hasSuccessfullyEnteredTime = true;
+                } else {
+                  // Restore last successful entered time if parsing failed.
+                  timeController.text = formatEnteredTime(_enteredTime);
+                }
+              },
+              style: smallText),
+        ])),
         floatingActionButton: FloatingActionButton(
             child: Icon(Icons.check),
             tooltip: 'Submit',
-            onPressed: () async => await _pushSubmit(timeController.text),
+            onPressed: isEntryPositive()
+                ? () async => await _pushSubmit(timeController.text)
+                : null,
+            disabledElevation: 0,
             backgroundColor: widget.app.colorScheme.primary),
       ),
     );
