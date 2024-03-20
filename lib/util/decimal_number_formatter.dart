@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// Allows only decimal numbers to be input. Limits decimal plates to 3.

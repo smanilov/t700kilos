@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 
-import 'package:t700kilos/main.dart';
+import 'package:t700kilos/ui/app.dart';
 import 'package:t700kilos/util/morning_evening_analysis.dart';
 import 'package:t700kilos/storage.dart';
 import 'package:t700kilos/util/clock.dart';
