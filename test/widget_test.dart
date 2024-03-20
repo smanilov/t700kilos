@@ -5,9 +5,9 @@ import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 
 import 'package:t700kilos/main.dart';
-import 'package:t700kilos/morning_evening_analysis.dart';
+import 'package:t700kilos/util/morning_evening_analysis.dart';
 import 'package:t700kilos/storage.dart';
-import 'package:t700kilos/clock.dart';
+import 'package:t700kilos/util/clock.dart';
 import 'package:t700kilos/record.dart';
 
 import 'widget_test.mocks.dart';

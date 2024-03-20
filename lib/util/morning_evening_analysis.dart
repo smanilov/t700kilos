@@ -1,6 +1,6 @@
 import 'package:built_value/built_value.dart';
 
-import 'record.dart';
+import '../record.dart';
 
 part 'morning_evening_analysis.g.dart';
 

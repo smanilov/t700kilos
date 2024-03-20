@@ -5,8 +5,8 @@ import 'dart:io';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'message_and_cause_throwable.dart';
-import 'time_formatting.dart';
+import 'util/message_and_cause_throwable.dart';
+import 'util/time_formatting.dart';
 import 'record.dart';
 
 class Storage {

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:t700kilos/morning_evening_analysis.dart';
+import 'package:t700kilos/util/morning_evening_analysis.dart';
 
-import 'clock.dart';
-import 'decimal_number_formatter.dart';
-import 'ordinal.dart';
-import 'time_formatting.dart';
+import 'util/clock.dart';
+import 'util/decimal_number_formatter.dart';
+import 'util/ordinal.dart';
+import 'util/time_formatting.dart';
 import 'record.dart';
 import 'storage.dart';
 

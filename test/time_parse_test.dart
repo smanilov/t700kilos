@@ -1,4 +1,4 @@
-import 'package:t700kilos/time_formatting.dart';
+import 'package:t700kilos/util/time_formatting.dart';
 import 'package:test/test.dart';
 
 void main() {
