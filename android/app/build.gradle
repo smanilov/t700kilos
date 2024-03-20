@@ -30,8 +30,8 @@ android {
         applicationId "com.aethok.t700kilos"
         minSdkVersion 19  // Needed by file pick/save dialogs.
         targetSdkVersion 33
-        versionCode 7
-        versionName "1.0.5"
+        versionCode 8
+        versionName "1.0.6"
     }
 
     signingConfigs {
