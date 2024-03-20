@@ -41,17 +41,15 @@ void main() {
     await tester.enterText(find.byKey(Key("weight input")), "75.5");
 
     // Trigger state update: button is enabled only after valid text is entered.
-    await tester.pump();
+    // Settle is needed, because the button appears with an animation.
+    await tester.pumpAndSettle();
 
     // Tap the 'v' icon and trigger a frame.
     await tester.tap(find.byIcon(Icons.check));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     // Verify that a record has been stored.
     verify(storage.storeSingleRecord(Record(75.5, DateTime(1337))));
-
-    // Unclear why two pumps are needed to switch screens.
-    await tester.pump();
 
     // Verify that the confirmation text is there.
     expect(find.text('got it'), findsOneWidget);
@@ -61,10 +59,7 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(buildTestApp());
 
-    final fab =
-    tester.widget<FloatingActionButton>(find.byType(FloatingActionButton));
-
-    expect(fab.onPressed, isNull);
+    expect(find.byType(FloatingActionButton), findsNothing);
   });
 
   testWidgets('Submitting is enabled when weight is entered',
@@ -78,10 +73,7 @@ void main() {
     // Trigger state update.
     await tester.pump();
 
-    final fab =
-        tester.widget<FloatingActionButton>(find.byType(FloatingActionButton));
-
-    expect(fab.onPressed, isNotNull);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
   });
 
   testWidgets('Submitting is disabled when weight is cleared',
@@ -101,10 +93,7 @@ void main() {
     // Trigger state update.
     await tester.pump();
 
-    final fab =
-    tester.widget<FloatingActionButton>(find.byType(FloatingActionButton));
-
-    expect(fab.onPressed, isNull);
+    expect(find.byType(FloatingActionButton), findsNothing);
   });
 
   testWidgets('Submitting is disabled when zero weight is entered',
@@ -118,26 +107,20 @@ void main() {
     // Trigger state update.
     await tester.pump();
 
-    final fab =
-    tester.widget<FloatingActionButton>(find.byType(FloatingActionButton));
-
-    expect(fab.onPressed, isNull);
+    expect(find.byType(FloatingActionButton), findsNothing);
   });
 
   testWidgets('Submitting is enabled for unreasonably high weights',
-          (WidgetTester tester) async {
-        // Build our app and trigger a frame.
-        await tester.pumpWidget(buildTestApp());
+      (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(buildTestApp());
 
-        // Enter some valid weight.
-        await tester.enterText(find.byKey(Key("weight input")), "700");
+    // Enter some valid weight.
+    await tester.enterText(find.byKey(Key("weight input")), "700");
 
-        // Trigger state update.
-        await tester.pump();
+    // Trigger state update.
+    await tester.pump();
 
-        final fab =
-        tester.widget<FloatingActionButton>(find.byType(FloatingActionButton));
-
-        expect(fab.onPressed, isNotNull);
-      });
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+  });
 }

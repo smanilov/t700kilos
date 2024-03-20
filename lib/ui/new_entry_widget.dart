@@ -100,14 +100,14 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
               },
               style: smallText),
         ])),
-        floatingActionButton: FloatingActionButton(
-            child: Icon(Icons.check),
-            tooltip: 'Submit',
-            onPressed: isEntryPositive()
-                ? () async => await _pushSubmit(timeController.text)
-                : null,
-            disabledElevation: 0,
-            backgroundColor: widget.app.colorScheme.primary),
+        floatingActionButton: isEntryPositive()
+            ? FloatingActionButton(
+                child: Icon(Icons.check),
+                tooltip: 'Submit',
+                onPressed: () async => await _pushSubmit(timeController.text),
+                disabledElevation: 0,
+                backgroundColor: widget.app.colorScheme.primary)
+            : null,
       ),
     );
   }
