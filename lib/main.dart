@@ -55,24 +55,21 @@ class T700KilosApp extends StatelessWidget {
   final Storage storage;
   final Clock clock;
   final MorningEveningAnalyser morningEveningAnalyser;
+
   // TODO: make non-nullable when finished and added to test
   final SwipeAnalyser? swipeAnalyser;
+  final ColorScheme colorScheme =
+      ThemeData().colorScheme.copyWith(primary: Colors.yellow);
 
-  T700KilosApp(
-    this.storage,
-    this.clock,
-    this.morningEveningAnalyser,
-    [this.swipeAnalyser]
-  );
+  T700KilosApp(this.storage, this.clock, this.morningEveningAnalyser,
+      [this.swipeAnalyser]);
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = ThemeData();
     return MaterialApp(
       title: '700 kilos',
-      theme: theme.copyWith(
-          colorScheme: theme.colorScheme
-              .copyWith(primary: Colors.yellow, secondary: Colors.yellow)),
+      theme: theme.copyWith(colorScheme: colorScheme),
       home: createWelcomeWidget(),
     );
   }
@@ -215,6 +212,7 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
                   ),
                 ]
               : [],
+          backgroundColor: widget.app.colorScheme.primary,
         ),
         body: Center(
             child:
@@ -260,7 +258,8 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
         floatingActionButton: FloatingActionButton(
             child: Icon(Icons.check),
             tooltip: 'Submit',
-            onPressed: () async => await _pushSubmit(timeController.text)),
+            onPressed: () async => await _pushSubmit(timeController.text),
+            backgroundColor: widget.app.colorScheme.primary),
       ),
     );
   }
@@ -412,12 +411,14 @@ class _ShowSavedWidgetState extends State<ShowSavedWidget> {
             onPressed: _pushImportExport,
           ),
         ],
+        backgroundColor: widget.app.colorScheme.primary,
       ),
       body: ListView(children: divided),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         tooltip: 'New entry',
         onPressed: () async => await widget.app.navigateToNewEntry(context),
+        backgroundColor: widget.app.colorScheme.primary,
       ),
     );
   }
