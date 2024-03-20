@@ -16,7 +16,6 @@ Future<void> main() async {
     new Storage(),
     new Clock(),
     new MorningEveningAnalyser(),
-    null, // new SwipeAnalyser(),
   ));
 }
 
@@ -26,24 +25,6 @@ Future<void> forcePortraitOnlyForAndroid() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-}
-
-class SwipeAnalyser {
-  final panHistory = <DragUpdateDetails>[];
-
-  void recordPan(DragUpdateDetails details) {
-    panHistory.add(details);
-  }
-
-  bool hasSwipedLeft() {
-    // TODO: be smarter
-    return panHistory.isNotEmpty && panHistory.last.delta.dx < 0;
-  }
-
-  bool hasSwipedRight() {
-    // TODO: be smarter
-    return panHistory.isNotEmpty && panHistory.last.delta.dx > 0;
-  }
 }
 
 enum SlideDirection {
@@ -56,13 +37,10 @@ class T700KilosApp extends StatelessWidget {
   final Clock clock;
   final MorningEveningAnalyser morningEveningAnalyser;
 
-  // TODO: make non-nullable when finished and added to test
-  final SwipeAnalyser? swipeAnalyser;
   final ColorScheme colorScheme =
       ThemeData().colorScheme.copyWith(primary: Colors.yellow);
 
-  T700KilosApp(this.storage, this.clock, this.morningEveningAnalyser,
-      [this.swipeAnalyser]);
+  T700KilosApp(this.storage, this.clock, this.morningEveningAnalyser);
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +56,6 @@ class T700KilosApp extends StatelessWidget {
         app: this,
         storage: storage,
         clock: clock,
-        swipeAnalyser: swipeAnalyser,
         isFirst: true,
       );
 
@@ -143,7 +120,6 @@ class T700KilosApp extends StatelessWidget {
         app: this,
         storage: storage,
         clock: clock,
-        swipeAnalyser: swipeAnalyser,
         isFirst: false,
       );
     }));
@@ -155,7 +131,6 @@ class NewEntryWidget extends StatefulWidget {
   final T700KilosApp app;
   final Storage storage;
   final Clock clock;
-  final SwipeAnalyser? swipeAnalyser;
 
   /// Whether this widget is the one at startup, or one created later.
   final bool isFirst;
@@ -164,7 +139,6 @@ class NewEntryWidget extends StatefulWidget {
     required this.app,
     required this.storage,
     required this.clock,
-    required this.swipeAnalyser,
     required this.isFirst,
   });
 
@@ -186,20 +160,6 @@ class _NewEntryWidgetState extends State<NewEntryWidget> {
         TextEditingController(text: formatEnteredTime(_enteredTime));
 
     return GestureDetector(
-      onPanUpdate: (details) {
-        if (widget.swipeAnalyser != null) {
-          widget.swipeAnalyser!.recordPan(details);
-          if (widget.isFirst) {
-            if (widget.swipeAnalyser!.hasSwipedLeft()) {
-              widget.app.navigateToShowSaved(context, SlideDirection.right);
-            }
-          } else {
-            if (widget.swipeAnalyser!.hasSwipedRight()) {
-              widget.app.navigateToShowSaved(context, SlideDirection.left);
-            }
-          }
-        }
-      },
       child: Scaffold(
         appBar: AppBar(
           title: Text('New Entry'),
